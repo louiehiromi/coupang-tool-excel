@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>酷澎配貨計算工具</title>
+<link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -308,9 +309,10 @@ function handleMonthFile(file){
 }
 
 function applyMonthData(name){
-  console.log('applyMonthData called, name:', JSON.stringify(name));
+  var cleanName=name.replace(/\s*\[.*$/,'').trim();
+  console.log('applyMonthData called, name:', JSON.stringify(name), 'cleanName:', JSON.stringify(cleanName));
   console.log('dataMonth keys:', JSON.stringify(Object.keys(dataMonth)));
-  var qty=dataMonth[name]||0;
+  var qty=dataMonth[cleanName]||dataMonth[name]||0;
   console.log('matched qty:', qty);
   if(qty>0){
     document.getElementById('order-now').value=qty;
