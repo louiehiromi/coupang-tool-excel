@@ -310,10 +310,7 @@ function handleMonthFile(file){
 
 function applyMonthData(name){
   var cleanName=name.replace(/\s*\[.*$/,'').trim();
-  console.log('applyMonthData called, name:', JSON.stringify(name), 'cleanName:', JSON.stringify(cleanName));
-  console.log('dataMonth keys:', JSON.stringify(Object.keys(dataMonth)));
   var qty=dataMonth[cleanName]||dataMonth[name]||0;
-  console.log('matched qty:', qty);
   if(qty>0){
     document.getElementById('order-now').value=qty;
     calc();
