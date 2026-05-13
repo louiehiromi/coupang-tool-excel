@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>酷澎配貨計算工具</title>
-<link rel="icon" type="image/png" href="favicon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -100,7 +99,7 @@ body {
   <div class="page-title">酷澎配貨計算工具</div>
   <div class="page-sub">上傳去年與今年 Ecount 銷售報表，依品項計算配貨天花板。資料會自動記憶，下次開啟不需重新上傳。</div>
 
-  <p class="section-label">上傳 Ecount Excel（更新資料時才需要重新上傳）</p>
+  <p class="section-label">銷售報表（更新資料時才需要重新上傳）</p>
   <div class="upload-row">
     <div class="upload-zone" id="zone-yoy" onclick="document.getElementById('input-yoy').click()">
       <i class="ti ti-calendar-minus"></i>
@@ -115,6 +114,16 @@ body {
   </div>
   <input type="file" id="input-yoy" accept=".xls,.xlsx" style="display:none">
   <input type="file" id="input-this" accept=".xls,.xlsx" style="display:none">
+
+  <p class="section-label" style="margin-top:1rem">本月已接訂單（每次下單前更新）</p>
+  <div class="upload-zone" id="zone-month" onclick="document.getElementById('input-month').click()" style="text-align:left;display:flex;align-items:center;gap:12px;padding:0.9rem 1rem;">
+    <i class="ti ti-file-invoice" style="font-size:20px;color:#888780;flex-shrink:0;margin:0"></i>
+    <div>
+      <div class="uz-title">本月酷澎訂單報表</div>
+      <div class="uz-sub" id="sub-month">點擊上傳 .xlsx（不記憶，每次手動上傳）</div>
+    </div>
+  </div>
+  <input type="file" id="input-month" accept=".xls,.xlsx" style="display:none">
 
   <div class="cache-bar" id="cache-bar" style="display:none">
     <div class="cache-info" id="cache-info"></div>
@@ -191,6 +200,7 @@ body {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 var dataYoy={cp:{},mo:{}},dataThis={cp:{},mo:{}};
+var dataMonth={};
 var selectedProduct=null,baseVal=0,currentTab='cp';
 var loadedYoy=false,loadedThis=false;
 var pendingYoyName='',pendingThisName='';
@@ -260,6 +270,49 @@ function setupZone(zoneId,inputId,subId,key){
 }
 setupZone('zone-yoy','input-yoy','sub-yoy','yoy');
 setupZone('zone-this','input-this','sub-this','this');
+
+var zoneMonth=document.getElementById('zone-month');
+document.getElementById('input-month').addEventListener('change',function(){handleMonthFile(this.files[0]);});
+zoneMonth.addEventListener('dragover',function(e){e.preventDefault();zoneMonth.classList.add('dragover');});
+zoneMonth.addEventListener('dragleave',function(){zoneMonth.classList.remove('dragover');});
+zoneMonth.addEventListener('drop',function(e){e.preventDefault();zoneMonth.classList.remove('dragover');handleMonthFile(e.dataTransfer.files[0]);});
+
+function handleMonthFile(file){
+  if(!file)return;
+  document.getElementById('sub-month').textContent='讀取中…';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      dataMonth={};
+      for(var i=0;i<rows.length;i++){
+        var row=rows[i];
+        var c0=String(row[0]||'').trim(),c1=String(row[1]||'').trim();
+        if(!c0||c0==='按品項'||c0==='品項名稱(規格)'||c0.indexOf('合計')!==-1)continue;
+        var name=c0.replace(/\s*\[.*?\]\s*$/,'').trim();
+        var qty=parseFloat(c1)||0;
+        if(qty>0)dataMonth[name]=qty;
+      }
+      var count=Object.keys(dataMonth).length;
+      document.getElementById('sub-month').textContent='✓ '+file.name+'（'+count+' 品項）';
+      document.getElementById('zone-month').classList.add('loaded');
+      if(selectedProduct)applyMonthData(selectedProduct);
+    }catch(err){
+      document.getElementById('sub-month').textContent='讀取失敗：'+err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function applyMonthData(name){
+  var qty=dataMonth[name]||0;
+  if(qty>0){
+    document.getElementById('order-now').value=qty;
+    calc();
+  }
+}
 
 var psearch=document.getElementById('psearch');
 psearch.addEventListener('keydown',function(e){if(e.key==='Enter')filterPills(this.value.trim());});
@@ -383,7 +436,8 @@ function selectProduct(name){
   document.getElementById('card-this').classList.toggle('hi',cpThisAvg>cpYoyAvg);
   document.getElementById('order-now').value='';
   document.getElementById('order-new').value='';
-  updateGrowth();
+  if(Object.keys(dataMonth).length>0)applyMonthData(name);
+  else updateGrowth();
 }
 
 function updateGrowth(){
