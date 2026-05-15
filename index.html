@@ -8,24 +8,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #f5f4f0;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  padding: 2rem 1rem;
-  color: #1a1a1a;
-}
-.card {
-  background: #fff;
-  border-radius: 16px;
-  border: 0.5px solid #e0ddd5;
-  padding: 2rem;
-  width: 100%;
-  max-width: 700px;
-  height: fit-content;
-}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f4f0; min-height: 100vh; display: flex; justify-content: center; padding: 2rem 1rem; color: #1a1a1a; }
+.card { background: #fff; border-radius: 16px; border: 0.5px solid #e0ddd5; padding: 2rem; width: 100%; max-width: 700px; height: fit-content; }
 .page-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
 .page-sub { font-size: 13px; color: #888780; margin-bottom: 2rem; }
 .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #888780; margin: 0 0 10px; }
@@ -63,10 +47,7 @@ body {
 .month-table td { padding: 7px 8px; border-bottom: 0.5px solid #e8e5de; text-align: right; color: #1a1a1a; }
 .month-table td:first-child { text-align: left; }
 .month-table tr:last-child td { border-bottom: none; }
-.nd { color: #b4b2a9; }
-.up { color: #3b6d11; }
-.dn { color: #a32d2d; }
-.cy { color: #185fa5; }
+.nd { color: #b4b2a9; } .up { color: #3b6d11; } .dn { color: #a32d2d; } .cy { color: #185fa5; }
 .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 1.5rem; }
 .metric { background: #f5f4f0; border-radius: 8px; padding: 12px 14px; border: 0.5px solid transparent; }
 .metric.hi { border-color: #378add; }
@@ -84,9 +65,7 @@ body {
 .input-group input { padding: 7px 10px; font-size: 14px; border: 0.5px solid #c8c5bc; border-radius: 8px; background: #fff; color: #1a1a1a; outline: none; }
 .input-group input:focus { border-color: #888780; }
 .verdict { border-radius: 8px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 10px; margin-top: 1rem; }
-.v-neutral { background: #f5f4f0; }
-.v-ok { background: #eaf3de; }
-.v-no { background: #fcebeb; }
+.v-neutral { background: #f5f4f0; } .v-ok { background: #eaf3de; } .v-no { background: #fcebeb; }
 .vi { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
 .v-neutral .vi, .v-neutral .vb { color: #888780; }
 .v-ok .vi, .v-ok .vb { color: #3b6d11; }
@@ -116,12 +95,12 @@ body {
   <input type="file" id="input-yoy" accept=".xls,.xlsx" style="display:none">
   <input type="file" id="input-this" accept=".xls,.xlsx" style="display:none">
 
-  <p class="section-label" style="margin-top:1rem">本月已接訂單（每次下單前更新）</p>
+  <p class="section-label" style="margin-top:1rem">本月已接訂單（有新資料才需要重新上傳）</p>
   <div class="upload-zone" id="zone-month" onclick="document.getElementById('input-month').click()" style="text-align:left;display:flex;align-items:center;gap:12px;padding:0.9rem 1rem;">
     <i class="ti ti-file-invoice" style="font-size:20px;color:#888780;flex-shrink:0;margin:0"></i>
     <div>
       <div class="uz-title">本月酷澎訂單報表</div>
-      <div class="uz-sub" id="sub-month">點擊上傳 .xlsx（自動記憶，有新資料再重新上傳）</div>
+      <div class="uz-sub" id="sub-month">點擊上傳 .xlsx（自動記憶）</div>
     </div>
   </div>
   <input type="file" id="input-month" accept=".xls,.xlsx" style="display:none">
@@ -200,17 +179,17 @@ body {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-var dataYoy={cp:{},mo:{}},dataThis={cp:{},mo:{}};
-var dataMonth={};
+var dataYoy={cp:{},mo:{}},dataThis={cp:{},mo:{}},dataMonth={};
 var selectedProduct=null,baseVal=0,currentTab='cp';
-var loadedYoy=false,loadedThis=false;
 var pendingYoyName='',pendingThisName='',pendingMonthName='';
-var STORAGE_KEY='coupang_tool_data_v2';
+var STORAGE_KEY='coupang_tool_data_v3';
 
 function isCoupang(s){return String(s).indexOf('酷澎')!==-1;}
 function isMomo(s){return String(s).indexOf('momo')!==-1;}
 function show(id){document.getElementById(id).classList.remove('hidden');}
 function hide(id){document.getElementById(id).classList.add('hidden');}
+function hasYoy(){return Object.keys(dataYoy.cp).length>0||Object.keys(dataYoy.mo).length>0;}
+function hasThis(){return Object.keys(dataThis.cp).length>0||Object.keys(dataThis.mo).length>0;}
 
 (function init(){
   try{
@@ -218,17 +197,17 @@ function hide(id){document.getElementById(id).classList.add('hidden');}
     if(!raw)return;
     var saved=JSON.parse(raw);
     if(saved.yoy&&saved.this&&saved.savedAt){
-      dataYoy=saved.yoy;dataThis=saved.this;
-      loadedYoy=true;loadedThis=true;
+      dataYoy=saved.yoy; dataThis=saved.this;
       pendingYoyName=saved.yoyName||'去年報表';
       pendingThisName=saved.thisName||'今年報表';
-      if(saved.month){
-        dataMonth=saved.month;
-        markLoaded('zone-month','sub-month',saved.monthName+'（'+Object.keys(dataMonth).length+' 品項）');
-      }
-      showCacheBar(saved.savedAt);
       markLoaded('zone-yoy','sub-yoy',saved.yoyName);
       markLoaded('zone-this','sub-this',saved.thisName);
+      if(saved.month&&Object.keys(saved.month).length>0){
+        dataMonth=saved.month;
+        pendingMonthName=saved.monthName||'本月報表';
+        markLoaded('zone-month','sub-month',pendingMonthName+'（'+Object.keys(dataMonth).length+' 品項）');
+      }
+      showCacheBar(saved.savedAt);
       buildUI();
     }
   }catch(e){}
@@ -250,19 +229,22 @@ function showCacheBar(savedAt){
 function clearCache(){
   if(!confirm('確定要清除儲存的資料嗎？'))return;
   localStorage.removeItem(STORAGE_KEY);
-  dataYoy={cp:{},mo:{}};dataThis={cp:{},mo:{}};dataMonth={};
-  loadedYoy=false;loadedThis=false;
+  dataYoy={cp:{},mo:{}}; dataThis={cp:{},mo:{}}; dataMonth={};
   document.getElementById('cache-bar').style.display='none';
   hide('main-content');
   ['zone-yoy','zone-this','zone-month'].forEach(function(id){document.getElementById(id).classList.remove('loaded');});
   document.getElementById('sub-yoy').textContent='點擊上傳 .xlsx';
   document.getElementById('sub-this').textContent='點擊上傳 .xlsx';
-  document.getElementById('sub-month').textContent='點擊上傳 .xlsx（自動記憶，有新資料再重新上傳）';
+  document.getElementById('sub-month').textContent='點擊上傳 .xlsx（自動記憶）';
 }
 
 function saveToStorage(){
   try{
-    var payload={yoy:dataYoy,this:dataThis,savedAt:Date.now(),yoyName:pendingYoyName,thisName:pendingThisName,month:dataMonth,monthName:pendingMonthName};
+    var payload={
+      yoy:dataYoy, this:dataThis, month:dataMonth,
+      savedAt:Date.now(),
+      yoyName:pendingYoyName, thisName:pendingThisName, monthName:pendingMonthName
+    };
     localStorage.setItem(STORAGE_KEY,JSON.stringify(payload));
   }catch(e){}
 }
@@ -283,6 +265,36 @@ zoneMonth.addEventListener('dragover',function(e){e.preventDefault();zoneMonth.c
 zoneMonth.addEventListener('dragleave',function(){zoneMonth.classList.remove('dragover');});
 zoneMonth.addEventListener('drop',function(e){e.preventDefault();zoneMonth.classList.remove('dragover');handleMonthFile(e.dataTransfer.files[0]);});
 
+function handleFile(file,subId,zoneId,key){
+  if(!file)return;
+  document.getElementById(subId).textContent='讀取中…';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      var parsed=parseRows(rows);
+      var cpCount=Object.keys(parsed.cp).length;
+      if(key==='yoy'){dataYoy=parsed;pendingYoyName=file.name;}
+      else{dataThis=parsed;pendingThisName=file.name;}
+      document.getElementById(subId).textContent='✓ '+file.name+'（酷澎 '+cpCount+' 品項）';
+      document.getElementById(zoneId).classList.add('loaded');
+      // 只要去年或今年任一份有資料就存檔並顯示
+      if(hasYoy()&&hasThis()){
+        saveToStorage();
+        showCacheBar(Date.now());
+        buildUI();
+      } else {
+        saveToStorage();
+      }
+    }catch(err){
+      document.getElementById(subId).textContent='讀取失敗：'+err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 function handleMonthFile(file){
   if(!file)return;
   document.getElementById('sub-month').textContent='讀取中…';
@@ -297,13 +309,12 @@ function handleMonthFile(file){
         var row=rows[i];
         var c0=String(row[0]||'').trim(),c1=String(row[1]||'').trim();
         if(!c0||c0==='按品項'||c0==='品項名稱(規格)'||c0.indexOf('合計')!==-1)continue;
-        var name=c0.replace(/\s*[\[【(（][^\]】)）]*[\]】)）]\s*$/,'').trim();
-        name=name.replace(/\s*\[.*$/,'').trim();
+        var name=c0.replace(/\s*\[.*$/,'').trim();
         var qty=parseFloat(c1)||0;
         if(qty>0)dataMonth[name]=qty;
       }
-      var count=Object.keys(dataMonth).length;
       pendingMonthName=file.name;
+      var count=Object.keys(dataMonth).length;
       document.getElementById('sub-month').textContent='✓ '+file.name+'（'+count+' 品項）';
       document.getElementById('zone-month').classList.add('loaded');
       saveToStorage();
@@ -318,13 +329,24 @@ function handleMonthFile(file){
 function applyMonthData(name){
   var cleanName=name.replace(/\s*\[.*$/,'').trim();
   var qty=dataMonth[cleanName]||dataMonth[name]||0;
-  if(qty>0){
-    document.getElementById('order-now').value=qty;
-    calc();
-  } else {
-    document.getElementById('order-now').value='';
-    calc();
+  document.getElementById('order-now').value=qty>0?qty:'';
+  calc();
+}
+
+function parseRows(rows){
+  var cp={},mo={};
+  for(var i=0;i<rows.length;i++){
+    var row=rows[i];
+    var c0=String(row[0]||'').trim(),c1=String(row[1]||'').trim();
+    var c2=String(row[2]||'').trim(),c3=String(row[3]||'').trim();
+    if(!c0||c0==='按品項'||c0.indexOf('合計')!==-1||c1.indexOf('合計')!==-1)continue;
+    if(!c1||!c2||!c3)continue;
+    if(!/^\d{4}\/\d{2}/.test(c2))continue;
+    var qty=parseFloat(c3)||0; if(qty<=0)continue;
+    if(isCoupang(c1)){if(!cp[c0])cp[c0]=[];cp[c0].push({month:c2.trim(),qty:qty});}
+    else if(isMomo(c1)){if(!mo[c0])mo[c0]=[];mo[c0].push({month:c2.trim(),qty:qty});}
   }
+  return{cp:cp,mo:mo};
 }
 
 var psearch=document.getElementById('psearch');
@@ -341,45 +363,6 @@ function filterPills(kw){
   document.getElementById('no-result').style.display=any?'none':'block';
 }
 
-function handleFile(file,subId,zoneId,key){
-  if(!file)return;
-  document.getElementById(subId).textContent='讀取中…';
-  var reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
-      var ws=wb.Sheets[wb.SheetNames[0]];
-      var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      var parsed=parseRows(rows);
-      var cpCount=Object.keys(parsed.cp).length;
-      if(key==='yoy'){dataYoy=parsed;loadedYoy=true;pendingYoyName=file.name;}
-      else{dataThis=parsed;loadedThis=true;pendingThisName=file.name;}
-      document.getElementById(subId).textContent='✓ '+file.name+'（酷澎 '+cpCount+' 品項）';
-      document.getElementById(zoneId).classList.add('loaded');
-      if(loadedYoy&&loadedThis){saveToStorage();showCacheBar(Date.now());buildUI();}
-    }catch(err){
-      document.getElementById(subId).textContent='讀取失敗：'+err.message;
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function parseRows(rows){
-  var cp={},mo={};
-  for(var i=0;i<rows.length;i++){
-    var row=rows[i];
-    var c0=String(row[0]||'').trim(),c1=String(row[1]||'').trim();
-    var c2=String(row[2]||'').trim(),c3=String(row[3]||'').trim();
-    if(!c0||c0==='按品項'||c0.indexOf('合計')!==-1||c1.indexOf('合計')!==-1)continue;
-    if(!c1||!c2||!c3)continue;
-    if(!/^\d{4}\/\d{2}/.test(c2))continue;
-    var qty=parseFloat(c3)||0;if(qty<=0)continue;
-    if(isCoupang(c1)){if(!cp[c0])cp[c0]=[];cp[c0].push({month:c2.trim(),qty:qty});}
-    else if(isMomo(c1)){if(!mo[c0])mo[c0]=[];mo[c0].push({month:c2.trim(),qty:qty});}
-  }
-  return{cp:cp,mo:mo};
-}
-
 function buildUI(){
   var all={};
   [dataYoy,dataThis].forEach(function(d){
@@ -389,11 +372,11 @@ function buildUI(){
   var products=Object.keys(all).sort();
   show('main-content');
   var wrap=document.getElementById('pill-wrap');
-  wrap.innerHTML='';psearch.value='';
+  wrap.innerHTML=''; psearch.value='';
   document.getElementById('no-result').style.display='none';
   products.forEach(function(p){
     var pill=document.createElement('div');
-    pill.className='pill';pill.textContent=p;
+    pill.className='pill'; pill.textContent=p;
     pill.onclick=function(){selectProduct(p);};
     wrap.appendChild(pill);
   });
@@ -419,7 +402,7 @@ function selectProduct(name){
   [yCp,tCp,yMo,tMo].forEach(function(m){Object.keys(m).forEach(function(k){monthNums[k]=1;});});
   var months=Object.keys(monthNums).map(Number).sort(function(a,b){return a-b;});
   var thead=document.getElementById('month-thead'),tbody=document.getElementById('month-tbody');
-  thead.innerHTML='';tbody.innerHTML='';
+  thead.innerHTML=''; tbody.innerHTML='';
   var hr=document.createElement('tr');
   if(currentTab==='both')hr.innerHTML='<th>月份</th><th>去年 酷澎</th><th>去年 momo</th><th>今年 酷澎</th><th>今年 momo</th><th>酷澎 YOY</th>';
   else{var lbl=currentTab==='cp'?'酷澎':'momo';hr.innerHTML='<th>月份</th><th>去年 '+lbl+'</th><th>今年 '+lbl+'</th><th>增減</th><th>YOY %</th>';}
@@ -428,8 +411,7 @@ function selectProduct(name){
   months.forEach(function(mn){
     var ycp=yCp[mn]!==undefined?yCp[mn]:null,tcp=tCp[mn]!==undefined?tCp[mn]:null;
     var ymo=yMo[mn]!==undefined?yMo[mn]:null,tmo=tMo[mn]!==undefined?tMo[mn]:null;
-    if(ycp!==null){cpYT+=ycp;cpYC++;}
-    if(tcp!==null){cpTT+=tcp;cpTC++;}
+    if(ycp!==null){cpYT+=ycp;cpYC++;} if(tcp!==null){cpTT+=tcp;cpTC++;}
     function fmt(v,c){return v!==null?'<span class="'+(c||'')+'">'+v.toLocaleString()+'</span>':'<span class="nd">—</span>';}
     function fmtD(a,b){if(a===null||b===null)return'<span class="nd">—</span>';var d=b-a,s=d>=0?'+':'',c=d>=0?'up':'dn';return'<span class="'+c+'">'+(s+d.toLocaleString())+'</span>';}
     function fmtP(a,b){if(a===null||b===null||a===0)return'<span class="nd">—</span>';var p=Math.round((b-a)/a*100),s=p>=0?'+':'',c=p>=0?'up':'dn';return'<span class="'+c+'">'+(s+p)+'%</span>';}
