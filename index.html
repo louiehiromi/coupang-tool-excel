@@ -182,7 +182,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 var dataYoy={cp:{},mo:{}},dataThis={cp:{},mo:{}},dataMonth={};
 var selectedProduct=null,baseVal=0,currentTab='cp';
 var pendingYoyName='',pendingThisName='',pendingMonthName='';
-var STORAGE_KEY='coupang_tool_data_v3';
+var STORAGE_KEY='coupang_tool_data_v4';
 
 function isCoupang(s){return String(s).indexOf('酷澎')!==-1;}
 function isMomo(s){return String(s).indexOf('momo')!==-1;}
@@ -343,8 +343,9 @@ function parseRows(rows){
     if(!c1||!c2||!c3)continue;
     if(!/^\d{4}\/\d{2}/.test(c2))continue;
     var qty=parseFloat(c3)||0; if(qty<=0)continue;
-    if(isCoupang(c1)){if(!cp[c0])cp[c0]=[];cp[c0].push({month:c2.trim(),qty:qty});}
-    else if(isMomo(c1)){if(!mo[c0])mo[c0]=[];mo[c0].push({month:c2.trim(),qty:qty});}
+    var pname=c0.replace(/\s*\[.*$/,'').trim();
+    if(isCoupang(c1)){if(!cp[pname])cp[pname]=[];cp[pname].push({month:c2.trim(),qty:qty});}
+    else if(isMomo(c1)){if(!mo[pname])mo[pname]=[];mo[pname].push({month:c2.trim(),qty:qty});}
   }
   return{cp:cp,mo:mo};
 }
