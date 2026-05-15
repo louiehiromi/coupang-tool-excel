@@ -597,7 +597,7 @@ function buildYOY(code){
   document.getElementById('yoy-tbody').innerHTML=months.map(m=>{
     const l=ly[m]||0,t=ty[m]||0;
     const ml=lyMomo[m]||0,mt=tyMomo[m]||0;
-    const yoyPct=l>0?Math.round((t-l)/l*100):null;
+    const yoyPct=(l>0&&t>0)?Math.round((t-l)/l*100):null;
     const dcls=yoyPct===null?'':yoyPct>0?'diff-pos':yoyPct<0?'diff-neg':'';
     const yoyStr=yoyPct===null?'—':(yoyPct>0?'+':'')+yoyPct+'%';
     return `<tr>
