@@ -98,7 +98,7 @@ body {
 <body>
 <div class="card">
   <div class="page-title">酷澎配貨計算工具</div>
-  <div class="page-sub">上傳去年與今年 Ecount 銷售報表，依品項計算配貨天花板。資料會自動記憶，下次開啟不需重新上傳。</div>
+  <div class="page-sub">上傳 Ecount 銷售報表，依品項計算配貨天花板。三份報表都會自動記憶，重新整理或下次開啟不需重新上傳。</div>
 
   <p class="section-label">銷售報表（更新資料時才需要重新上傳）</p>
   <div class="upload-row">
@@ -121,7 +121,7 @@ body {
     <i class="ti ti-file-invoice" style="font-size:20px;color:#888780;flex-shrink:0;margin:0"></i>
     <div>
       <div class="uz-title">本月酷澎訂單報表</div>
-      <div class="uz-sub" id="sub-month">點擊上傳 .xlsx（不記憶，每次手動上傳）</div>
+      <div class="uz-sub" id="sub-month">點擊上傳 .xlsx（自動記憶，有新資料再重新上傳）</div>
     </div>
   </div>
   <input type="file" id="input-month" accept=".xls,.xlsx" style="display:none">
@@ -204,8 +204,8 @@ var dataYoy={cp:{},mo:{}},dataThis={cp:{},mo:{}};
 var dataMonth={};
 var selectedProduct=null,baseVal=0,currentTab='cp';
 var loadedYoy=false,loadedThis=false;
-var pendingYoyName='',pendingThisName='';
-var STORAGE_KEY='coupang_tool_data_v1';
+var pendingYoyName='',pendingThisName='',pendingMonthName='';
+var STORAGE_KEY='coupang_tool_data_v2';
 
 function isCoupang(s){return String(s).indexOf('酷澎')!==-1;}
 function isMomo(s){return String(s).indexOf('momo')!==-1;}
@@ -222,6 +222,10 @@ function hide(id){document.getElementById(id).classList.add('hidden');}
       loadedYoy=true;loadedThis=true;
       pendingYoyName=saved.yoyName||'去年報表';
       pendingThisName=saved.thisName||'今年報表';
+      if(saved.month){
+        dataMonth=saved.month;
+        markLoaded('zone-month','sub-month',saved.monthName+'（'+Object.keys(dataMonth).length+' 品項）');
+      }
       showCacheBar(saved.savedAt);
       markLoaded('zone-yoy','sub-yoy',saved.yoyName);
       markLoaded('zone-this','sub-this',saved.thisName);
@@ -246,18 +250,19 @@ function showCacheBar(savedAt){
 function clearCache(){
   if(!confirm('確定要清除儲存的資料嗎？'))return;
   localStorage.removeItem(STORAGE_KEY);
-  dataYoy={cp:{},mo:{}};dataThis={cp:{},mo:{}};
+  dataYoy={cp:{},mo:{}};dataThis={cp:{},mo:{}};dataMonth={};
   loadedYoy=false;loadedThis=false;
   document.getElementById('cache-bar').style.display='none';
   hide('main-content');
-  ['zone-yoy','zone-this'].forEach(function(id){document.getElementById(id).classList.remove('loaded');});
+  ['zone-yoy','zone-this','zone-month'].forEach(function(id){document.getElementById(id).classList.remove('loaded');});
   document.getElementById('sub-yoy').textContent='點擊上傳 .xlsx';
   document.getElementById('sub-this').textContent='點擊上傳 .xlsx';
+  document.getElementById('sub-month').textContent='點擊上傳 .xlsx（自動記憶，有新資料再重新上傳）';
 }
 
 function saveToStorage(){
   try{
-    var payload={yoy:dataYoy,this:dataThis,savedAt:Date.now(),yoyName:pendingYoyName,thisName:pendingThisName};
+    var payload={yoy:dataYoy,this:dataThis,savedAt:Date.now(),yoyName:pendingYoyName,thisName:pendingThisName,month:dataMonth,monthName:pendingMonthName};
     localStorage.setItem(STORAGE_KEY,JSON.stringify(payload));
   }catch(e){}
 }
@@ -298,8 +303,10 @@ function handleMonthFile(file){
         if(qty>0)dataMonth[name]=qty;
       }
       var count=Object.keys(dataMonth).length;
+      pendingMonthName=file.name;
       document.getElementById('sub-month').textContent='✓ '+file.name+'（'+count+' 品項）';
       document.getElementById('zone-month').classList.add('loaded');
+      saveToStorage();
       if(selectedProduct)applyMonthData(selectedProduct);
     }catch(err){
       document.getElementById('sub-month').textContent='讀取失敗：'+err.message;
