@@ -191,13 +191,26 @@ function hide(id){document.getElementById(id).classList.add('hidden');}
 function hasYoy(){return Object.keys(dataYoy.cp).length>0||Object.keys(dataYoy.mo).length>0;}
 function hasThis(){return Object.keys(dataThis.cp).length>0||Object.keys(dataThis.mo).length>0;}
 
+function cleanDataNames(data){
+  var result={cp:{},mo:{}};
+  ['cp','mo'].forEach(function(ch){
+    Object.keys(data[ch]||{}).forEach(function(k){
+      var clean=k.replace(/\s*\[.*$/,'').trim();
+      if(!result[ch][clean])result[ch][clean]=[];
+      result[ch][clean]=result[ch][clean].concat(data[ch][k]);
+    });
+  });
+  return result;
+}
+
 (function init(){
   try{
     var raw=localStorage.getItem(STORAGE_KEY);
     if(!raw)return;
     var saved=JSON.parse(raw);
     if(saved.yoy&&saved.this&&saved.savedAt){
-      dataYoy=saved.yoy; dataThis=saved.this;
+      dataYoy=cleanDataNames(saved.yoy);
+      dataThis=cleanDataNames(saved.this);
       pendingYoyName=saved.yoyName||'去年報表';
       pendingThisName=saved.thisName||'今年報表';
       markLoaded('zone-yoy','sub-yoy',saved.yoyName);
