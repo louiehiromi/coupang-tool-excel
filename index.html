@@ -314,7 +314,7 @@ body{
           <div class="field-label">品項</div>
           <div class="combo-wrap" id="combo-wrap">
             <input type="text" class="combo-input" id="combo-input"
-                   placeholder="請先上傳 Excel" disabled autocomplete="off">
+                   placeholder="請先上傳 Excel" disabled autocomplete="off" inputmode="search">
             <span class="combo-arrow">▾</span>
             <div class="combo-dropdown" id="combo-dd"></div>
           </div>
@@ -322,7 +322,7 @@ body{
 
         <div class="field">
           <div class="field-label">本次訂單數量</div>
-          <input type="number" class="num-input" id="order-qty" placeholder="—" min="0" disabled>
+          <input type="text" class="num-input" id="order-qty" placeholder="—" disabled inputmode="numeric" pattern="[0-9]*" autocomplete="off">
         </div>
 
         <div class="btn-row">
@@ -510,6 +510,9 @@ function selectItem(code){
   inp.value=it.name;
   inp.dataset.selected='1';
   document.getElementById('combo-dd').classList.remove('open');
+  const qty=document.getElementById('order-qty');
+  qty.value='';
+  qty.focus();
 }
 
 const inp=document.getElementById('combo-input');
@@ -529,7 +532,9 @@ function getCurrentMonth(){
 }
 
 document.getElementById('btn-check').addEventListener('click',doCheck);
-document.getElementById('order-qty').addEventListener('keydown',e=>{if(e.key==='Enter')doCheck();});
+const qtyEl=document.getElementById('order-qty');
+qtyEl.addEventListener('keydown',e=>{if(e.key==='Enter')doCheck();});
+qtyEl.addEventListener('input',()=>{qtyEl.value=qtyEl.value.replace(/[^\d]/g,'');});
 
 function doCheck(){
   if(!selectedCode){
